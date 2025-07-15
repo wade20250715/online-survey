@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>社会事件驱动的政治光谱测试</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a0b2e, #2c1a47, #0f1b31);
+            color: #f0f0f0;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at top right, rgba(255, 154, 158, 0.1), transparent 70%);
+            z-index: -1;
+        }
+        
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #a78bfa, #fbcfe8, #67e8f9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 5px rgba(167, 139, 250, 0.5); }
+            to { text-shadow: 0 0 20px rgba(103, 232, 249, 0.8); }
+        }
+        
+        .subtitle {
+            font-size: 1.4rem;
+            max-width: 800px;
+            margin: 0 auto 25px;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        
+        .stats-container {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+        
+        .stat-card {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px 30px;
+            text-align: center;
+            min-width: 200px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .stat-value {
+            font-size: 3rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+            color: #a78bfa;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            color: #67e8f9;
+        }
+        
+        .progress-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 30px auto;
+            max-width: 900px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a78bfa, #67e8f9);
+            border-radius: 12px;
+            transition: width 0.5s ease;
+        }
+        
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+        }
+        
+        .questions-container {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px auto;
+            max-width: 900px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .question-card {
+            background: rgba(30, 40, 70, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .event-image {
+            width: 100%;
+            height: 200px;
+            border-radius: 10px;
+            object-fit: cover;
+            margin-bottom: 20px;
+            background: linear-gradient(45deg, #4338ca, #5b21b6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .question-text {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            line-height: 1.5;
+            color: #f0f0f0;
+        }
+        
+        .event-desc {
+            font-size: 1rem;
+            color: #d1d5db;
+            margin-bottom: 20px;
+            line-height: 1.6;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+        }
+        
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 12px;
+        }
+        
+        .option-item {
+            position: relative;
+        }
+        
+        .option-input {
+            position: absolute;
+            opacity: 0;
+        }
+        
+        .option-label {
+            display: block;
+            text-align: center;
+            padding: 14px 5px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .option-input:checked + .option-label {
+            background: rgba(103, 232, 249, 0.2);
+            box-shadow: 0 0 0 2px #67e8f9;
+        }
+        
+        .option-label:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .btn-group {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 40px 0 30px;
+        }
+        
+        .btn {
+            padding: 16px 45px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #7c3aed, #5eead4);
+            color: #0f172a;
+            box-shadow: 0 5px 20px rgba(124, 58, 237, 0.4);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(124, 58, 237, 0.6);
+            background: linear-gradient(45deg, #6d28d9, #2dd4bf);
+        }
+        
+        .btn-secondary {
+            background: transparent;
+            color: #f0abfc;
+            border: 2px solid #f0abfc;
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(240, 171, 252, 0.15);
+        }
+        
+        #results {
+            background: rgba(0, 0, 0, 0.4);
+            border-radius: 20px;
+            padding: 40px;
+            margin: 40px auto;
+            max-width: 1200px;
+            display: none;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        .results-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .results-title {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #a78bfa, #67e8f9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .ideology-name {
+            font-size: 2.8rem;
+            margin-top: 10px;
+            background: linear-gradient(45deg, #f0abfc, #5eead4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+        }
+        
+        .spectrum-map-container {
+            position: relative;
+            height: 500px;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .spectrum-map {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        
+        .map-axis {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .x-axis {
+            width: 90%;
+            height: 2px;
+            left: 5%;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+        
+        .y-axis {
+            width: 2px;
+            height: 90%;
+            left: 50%;
+            top: 5%;
+            transform: translateX(-50%);
+        }
+        
+        .quadrant-label {
+            position: absolute;
+            font-size: 1.3rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .authoritarian {
+            top: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #a78bfa;
+        }
+        
+        .libertarian {
+            bottom: 8%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #67e8f9;
+        }
+        
+        .left {
+            top: 50%;
+            left: 8%;
+            transform: translateY(-50%);
+            color: #f0abfc;
+        }
+        
+        .right {
+            top: 50%;
+            right: 8%;
+            transform: translateY(-50%);
+            color: #5eead4;
+        }
+        
+        .user-point {
+            position: absolute;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #fff;
+            box-shadow: 0 0 0 8px rgba(255, 255, 255, 0.3), 
+                        0 0 20px 10px rgba(167, 139, 250, 0.6);
+            transform: translate(-50%, -50%);
+            transition: all 1.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 10;
+        }
+        
+        .user-radar {
+            position: absolute;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            animation: radarPulse 2s infinite;
+        }
+        
+        @keyframes radarPulse {
+            0% { 
+                width: 0; 
+                height: 0; 
+                opacity: 0.8;
+            }
+            100% { 
+                width: 100px; 
+                height: 100px; 
+                opacity: 0;
+            }
+        }
+        
+        .ideology-point {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            z-index: 5;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .ideology-info {
+            position: absolute;
+            padding: 15px;
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 10px;
+            width: 220px;
+            z-index: 20;
+            display: none;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .ideology-info h4 {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #67e8f9;
+        }
+        
+        .ideology-info p {
+            font-size: 0.95rem;
+            line-height: 1.5;
+            color: #d1d5db;
+        }
+        
+        .results-details {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+        
+        .score-card {
+            background: rgba(30, 41, 59, 0.7);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .score-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .score-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .dimension-title {
+            font-size: 1.5rem;
+            color: #67e8f9;
+        }
+        
+        .dimension-bar {
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            margin: 15px 0;
+            position: relative;
+        }
+        
+        .dimension-fill {
+            height: 100%;
+            border-radius: 12px;
+            transition: width 1s ease;
+        }
+        
+        .dimension-percent {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 1rem;
+            font-weight: bold;
+            text-shadow: 0 0 3px rgba(0, 0, 0, 0.7);
+        }
+        
+        .ideology-profile {
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(15, 23, 42, 0.5);
+            border-radius: 15px;
+            border-left: 4px solid #a78bfa;
+        }
+        
+        .profile-title {
+            font-size: 1.2rem;
+            color: #f0abfc;
+            margin-bottom: 15px;
+        }
+        
+        .match-items {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .match-item {
+            padding: 15px;
+            background: linear-gradient(to right, rgba(124, 58, 237, 0.2), rgba(14, 165, 233, 0.2));
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
+        
+        .match-item:hover {
+            transform: translateY(-5px);
+            background: linear-gradient(to right, rgba(124, 58, 237, 0.3), rgba(14, 165, 233, 0.3));
+        }
+        
+        .match-percent {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, #a78bfa, #5eead4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+        
+        .match-name {
+            font-size: 1.1rem;
+            text-align: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .match-desc {
+            font-size: 0.85rem;
+            text-align: center;
+            color: #d1d5db;
+        }
+        
+        .footer {
+            text-align: center;
+            margin: 40px 0 20px;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        @media (max-width: 900px) {
+            .options-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2.3rem;
+            }
+            
+            .spectrum-map-container {
+                height: 400px;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .subtitle {
+                font-size: 1.1rem;
+            }
+            
+            .stat-card {
+                min-width: 150px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>社会事件驱动的政治光谱测试</h1>
+            <p class="subtitle">通过40道基于全球社会事件的测试题，定位你在现代政治光谱中的位置 - 基于2020-2023年重大事件设计</p>
+            
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-value" id="answered-count">0</div>
+                    <div class="stat-label">已回答问题</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="remaining-count">40</div>
+                    <div class="stat-label">剩余问题</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="time-spent">0:00</div>
+                    <div class="stat-label">测试用时</div>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-header">
+                    <div>当前进度</div>
+                    <div id="progress-percent">0%</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                    <div class="progress-text" id="progress-text">0%</div>
+                </div>
+            </div>
+        </header>
+        
+        <div class="questions-container" id="questionsContainer">
+            <!-- 问题将由JS动态生成 -->
+        </div>
+        
+        <div class="btn-group">
+            <button class="btn btn-primary" id="submitBtn">
+                <i class="fas fa-chart-network"></i> 查看分析结果
+            </button>
+            <button class="btn btn-secondary" id="resetBtn">
+                <i class="fas fa-sync-alt"></i> 重新测试
+            </button>
+        </div>
+        
+        <div id="results">
+            <div class="results-header">
+                <div class="results-title">你的政治光谱定位：</div>
+                <div class="ideology-name" id="ideologyName">人文自由主义</div>
+                <p class="subtitle">基于你的回答，以下是详细的政治倾向分析图谱</p>
+            </div>
+            
+            <div class="results-grid">
+                <div class="spectrum-map-container">
+                    <div class="spectrum-map">
+                        <div class="map-axis x-axis"></div>
+                        <div class="map-axis y-axis"></div>
+                        <div class="quadrant-label authoritarian">权威主义</div>
+                        <div class="quadrant-label libertarian">自由意志主义</div>
+                        <div class="quadrant-label left">左翼</div>
+                        <div class="quadrant-label right">右翼</div>
+                        
+                        <div class="user-point"></div>
+                        <div class="user-radar"></div>
+                        
+                        <!-- 意识形态点由JS生成 -->
+                        
+                        <div class="ideology-info" id="ideologyInfo">
+                            <h4>意识形态名称</h4>
+                            <p>意识形态描述内容...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="results-details">
+                    <div class="score-card">
+                        <div class="score-header">
+                            <div class="dimension-title">经济立场分析</div>
+                            <div class="score-value" id="economicScore">进步左翼 (25%)</div>
+                        </div>
+                        <div class="dimension-bar">
+                            <div class="dimension-fill" id="economicBar" style="width: 25%; background: linear-gradient(90deg, #f0abfc, #5eead4);"></div>
+                            <div class="dimension-percent" id="economicPercent">25%</div>
+                        </div>
+                        <div class="ideology-profile">
+                            <div class="profile-title">核心特征：</div>
+                            <div id="economicAnalysis">支持政府干预经济、主张财富再分配、拥护公共服务全民化</div>
+                        </div>
+                    </div>
+                    
+                    <div class="score-card">
+                        <div class="score-header">
+                            <div class="dimension-title">社会立场分析</div>
+                            <div class="score-value" id="socialScore">自由进步 (75%)</div>
+                        </div>
+                        <div class="dimension-bar">
+                            <div class="dimension-fill" id="socialBar" style="width: 75%; background: linear-gradient(90deg, #f0abfc, #5eead4);"></div>
+                            <div class="dimension-percent" id="socialPercent">75%</div>
+                        </div>
+                        <div class="ideology-profile">
+                            <div class="profile-title">核心特征：</div>
+                            <div id="socialAnalysis">支持社会多元化、认同个人自由优先、主张文化开放包容</div>
+                        </div>
+                    </div>
+                    
+                    <div class="score-card">
+                        <div class="score-header">
+                            <div class="dimension-title">匹配意识形态</div>
+                        </div>
+                        <div class="match-items" id="matchItems">
+                            <!-- 匹配项目由JS生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer">
+            © 2023 政治光谱测试 | 基于诺兰图谱设计 | 社会事件数据来源：全球新闻数据库
+        </div>
+    </div>
+
+    <script>
+        // 12种现代意识形态数据
+        const ideologies = [
+            { id: 1, name: "社会民主主义", x: 30, y: 35, color: "#f0abfc", 
+              desc: "支持混合经济、社会福利体系，主张通过改革实现社会公平" },
+            
+            { id: 2, name: "自由保守主义", x: 70, y: 40, color: "#5eead4", 
+              desc: "在经济上支持自由市场，在社会问题上保持传统价值观" },
+            
+            { id: 3, name: "绿色政治", x: 35, y: 60, color: "#84cc16", 
+              desc: "将环境问题置于政治中心，主张可持续发展和社会公正" },
+            
+            { id: 4, name: "威权资本主义", x: 75, y: 25, color: "#f97316", 
+              desc: "经济自由与政治威权结合，强调国家主权和市场效率" },
+            
+            { id: 5, name: "民主社会主义", x: 20, y: 30, color: "#ec4899", 
+              desc: "主张生产资料民主控制，实现经济民主和社会平等" },
+            
+            { id: 6, name: "伊斯兰主义", x: 65, y: 15, color: "#8b5cf6", 
+              desc: "基于伊斯兰教法的政治体制，宗教价值观指导社会政策" },
+            
+            { id: 7, name: "自由意志主义", x: 60, y: 70, color: "#06b6d4", 
+              desc: "最小化国家干预，最大限度个人自由和市场经济" },
+            
+            { id: 8, name: "民粹民族主义", x: 75, y: 30, color: "#ef4444", 
+              desc: "强调国家利益优先，反精英主义和反全球化立场" },
+            
+            { id: 9, name: "技术社会主义", x: 40, y: 40, color: "#d946ef", 
+              desc: "技术进步与公共所有制结合，主张技术为公共利益服务" },
+            
+            { id: 10, name: "基督教民主主义", x: 65, y: 45, color: "#3b82f6", 
+              desc: "受基督教价值观启发，关注社会团结和辅助性原则" },
+            
+            { id: 11, name: "生态女权主义", x: 30, y: 65, color: "#10b981", 
+              desc: "将生态关怀与女权主义结合，强调包容性决策和社会公正" },
+            
+            { id: 12, name: "新封建主义", x: 55, y: 25, color: "#78716c", 
+              desc: "技术驱动的分散治理，主张基于共识的社区管理" }
+        ];
+        
+        // 基于社会事件的40个问题（2020-2023）
+        const questions = [
+            {
+                text: "各国政府在新冠疫情期间实施的封锁措施",
+                event: "COVID-19 全球封锁 (2020)",
+                options: [
+                    "完全合理",
+                    "基本合理",
+                    "中立",
+                    "过度反应",
+                    "严重侵犯自由"
+                ]
+            },
+            {
+                text: "美国最高法院推翻罗诉韦德案的决定",
+                event: "罗诉韦德案被推翻 (2022)",
+                options: [
+                    "重大胜利",
+                    "正确决定",
+                    "中立",
+                    "令人担忧",
+                    "人权倒退"
+                ]
+            },
+            {
+                text: "欧洲各国应对气候变化的政治决策",
+                event: "欧洲气候法案 (2021)",
+                options: [
+                    "过于激进",
+                    "可以接受",
+                    "中立",
+                    "必要但不足",
+                    "人类存续必须"
+                ]
+            },
+            {
+                text: "俄罗斯入侵乌克兰的国际反应",
+                event: "俄乌战争 (2022)",
+                options: [
+                    "完全正当",
+                    "可以理解",
+                    "中立",
+                    "过分反应",
+                    "非法入侵"
+                ]
+            },
+            {
+                text: "法国政府提高退休年龄的政策",
+                event: "法国养老金改革 (2023)",
+                options: [
+                    "非常合理",
+                    "必要措施",
+                    "中立",
+                    "不公平",
+                    "社会背叛"
+                ]
+            },
+            {
+                text: "美国取消学生贷款的政策辩论",
+                event: "美国学生贷款减免 (2022)",
+                options: [
+                    "完全反对",
+                    "不太赞成",
+                    "中立",
+                    "部分支持",
+                    "必要社会投资"
+                ]
+            },
+            {
+                text: "伊朗头巾抗议运动",
+                event: "伊朗女性抗争 (2022)",
+                options: [
+                    "外来干涉",
+                    "社会不稳定",
+                    "中立",
+                    "部分合理",
+                    "正义反抗"
+                ]
+            },
+            {
+                text: "中国动态清零政策",
+                event: "中国防疫政策 (2020-2022)",
+                options: [
+                    "完美决策",
+                    "基本有效",
+                    "中立",
+                    "代价过高",
+                    "不可持续"
+                ]
+            },
+            {
+                text: "英国难民遣送卢旺达政策",
+                event: "英国移民政策 (2022)",
+                options: [
+                    "必要措施",
+                    "可以理解",
+                    "中立",
+                    "存在担忧",
+                    "道德错误"
+                ]
+            },
+            {
+                text: "ChatGPT引发的AI监管讨论",
+                event: "生成式AI爆发 (2023)",
+                options: [
+                    "威胁太大",
+                    "需要监管",
+                    "中立",
+                    "限制发展",
+                    "自由创新"
+                ]
+            },
+            {
+                text: "台湾问题中的国际干预",
+                event: "中美台海危机 (2022)",
+                options: [
+                    "主权内政",
+                    "中国立场",
+                    "中立",
+                    "国际关切",
+                    "自决权利"
+                ]
+            },
+            {
+                text: "斯里兰卡政府崩溃与经济危机",
+                event: "斯里兰卡破产 (2022)",
+                options: [
+                    "外来阴谋",
+                    "政府失职",
+                    "中立",
+                    "制度失败",
+                    "殖民经济后果"
+                ]
+            },
+            {
+                text: "联合国COP27气候赔偿基金",
+                event: "气候赔偿基金 (2022)",
+                options: [
+                    "不必承担",
+                    "超出责任",
+                    "中立",
+                    "部分合理",
+                    "历史义务"
+                ]
+            },
+            {
+                text: "Meta大规模裁员引发的工作稳定性讨论",
+                event: "硅谷裁员潮 (2022)",
+                options: [
+                    "市场规律",
+                    "经营权利",
+                    "中立",
+                    "需要规范",
+                    "资本残酷"
+                ]
+            },
+            {
+                text: "法国禁止穆斯林学生穿长袍政策",
+                event: "法国世俗法案 (2023)",
+                options: [
+                    "政教分离",
+                    "必要限制",
+                    "中立",
+                    "文化歧视",
+                    "宗教压制"
+                ]
+            },
+            {
+                text: "巴西国会冲击事件",
+                event: "巴西政治危机 (2023)",
+                options: [
+                    "正义抗议",
+                    "表达不满",
+                    "中立",
+                    "令人担忧",
+                    "民主威胁"
+                ]
+            },
+            {
+                text: "阿根廷选择美元化经济路线",
+                event: "阿根廷经济改革 (2023)",
+                options: [
+                    "正确路径",
+                    "值得尝试",
+                    "中立",
+                    "存在风险",
+                    "国家灾难"
+                ]
+            },
+            {
+                text: "荷兰农民抗议排放政策",
+                event: "荷兰氮危机 (2022)",
+                options: [
+                    "农民权利",
+                    "可以理解",
+                    "中立",
+                    "保护环境",
+                    "气候优先"
+                ]
+            },
+            {
+                text: "香港国安法的实施",
+                event: "香港国安法 (2020)",
+                options: [
+                    "完全支持",
+                    "必要措施",
+                    "中立",
+                    "存在担忧",
+                    "侵蚀自由"
+                ]
+            },
+            {
+                text: "美国通过芯片法案限制对华出口",
+                event: "芯片战争 (2022)",
+                options: [
+                    "国家安全",
+                    "合理竞争",
+                    "中立",
+                    "损害经济",
+                    "技术霸权"
+                ]
+            },
+            {
+                text: "性别自我认同的法律地位",
+                event: "LGBTQ+权利 (2020-2023)",
+                options: [
+                    "反对改变",
+                    "传统定义",
+                    "中立",
+                    "部分承认",
+                    "完全支持"
+                ]
+            },
+            {
+                text: "人工智能生成内容的知识产权归属",
+                event: "AI版权争论 (2023)",
+                options: [
+                    "用户所有",
+                    "创作者所有",
+                    "中立",
+                    "平台权利",
+                    "公共领域"
+                ]
+            },
+            {
+                text: "印度穆斯林少数族裔权利保障",
+                event: "印度族群冲突 (2022)",
+                options: [
+                    "特殊待遇",
+                    "过多保护",
+                    "中立",
+                    "需要加强",
+                    "基本人权"
+                ]
+            },
+            {
+                text: "非洲债务减免国际呼吁",
+                event: "非洲债务危机 (2023)",
+                options: [
+                    "自我负责",
+                    "商业契约",
+                    "中立",
+                    "人道关怀",
+                    "殖民债务"
+                ]
+            },
+            {
+                text: "全球最低企业税协议",
+                event: "全球税务改革 (2021)",
+                options: [
+                    "干涉主权",
+                    "反对推行",
+                    "中立",
+                    "支持部分",
+                    "必需公平"
+                ]
+            },
+            {
+                text: "核能作为气候解决方案的角色",
+                event: "德国核能争议 (2023)",
+                options: [
+                    "反对发展",
+                    "逐步淘汰",
+                    "中立",
+                    "有限支持",
+                    "关键方案"
+                ]
+            },
+            {
+                text: "马斯克收购推特引发的言论自由辩论",
+                event: "推特内容管理 (2022)",
+                options: [
+                    "过度管理",
+                    "需要监管",
+                    "中立",
+                    "平台权利",
+                    "言论自由"
+                ]
+            },
+            {
+                text: "美国亚利桑那州禁止邮寄投票",
+                event: "美国选举改革 (2021)",
+                options: [
+                    "完全支持",
+                    "防止舞弊",
+                    "中立",
+                    "部分支持",
+                    "压制投票"
+                ]
+            },
+            {
+                text: "北溪管道爆炸事件",
+                event: "北溪破坏事件 (2022)",
+                options: [
+                    "美方责任",
+                    "不明行为",
+                    "中立",
+                    "乌方行动",
+                    "俄方操作"
+                ]
+            },
+            {
+                text: "比特币作为国家法定货币",
+                event: "萨尔瓦多实验 (2021)",
+                options: [
+                    "重大创新",
+                    "值得尝试",
+                    "中立",
+                    "风险过高",
+                    "完全反对"
+                ]
+            },
+            {
+                text: "日本福岛核废水排放计划",
+                event: "福岛核水争议 (2023)",
+                options: [
+                    "技术可行",
+                    "国际认可",
+                    "中立",
+                    "存在隐患",
+                    "环境灾难"
+                ]
+            },
+            {
+                text: "法国总统马克龙关于台湾的言论",
+                event: "马克龙访华争议 (2023)",
+                options: [
+                    "正确立场",
+                    "战略自主",
+                    "中立",
+                    "表述不当",
+                    "政治错误"
+                ]
+            },
+            {
+                text: "联合国停用TikTok决定",
+                event: "TikTok安全争议 (2023)",
+                options: [
+                    "国家安全",
+                    "支持决定",
+                    "中立",
+                    "反应过度",
+                    "歧视性政策"
+                ]
+            },
+            {
+                text: "好莱坞编剧工会罢工运动",
+                event: "创意劳动维权 (2023)",
+                options: [
+                    "资本权利",
+                    "商业决定",
+                    "中立",
+                    "同情工",
+                    "支持斗争"
+                ]
+            },
+            {
+                text: "苏丹冲突中的国际干预",
+                event: "苏丹内战 (2023)",
+                options: [
+                    "主权不容干涉",
+                    "人道原则",
+                    "中立",
+                    "有限干预",
+                    "必要行动"
+                ]
+            },
+            {
+                text: "厄尔尼诺现象的全球应对责任",
+                event: "极端天气频发 (2023)",
+                options: [
+                    "自然现象",
+                    "各国自理",
+                    "中立",
+                    "共同责任",
+                    "历史债务"
+                ]
+            },
+            {
+                text: "联合国终止俄罗斯人权理事会成员资格",
+                event: "俄罗斯被暂停资格 (2022)",
+                options: [
+                    "政治操纵",
+                    "反对决定",
+                    "中立",
+                    "部分支持",
+                    "完全合理"
+                ]
+            },
+            {
+                text: "印度成为世界人口第一大国",
+                event: "全球人口变迁 (2023)",
+                options: [
+                    "发展机遇",
+                    "中性影响",
+                    "中立",
+                    "挑战增加",
+                    "资源危机"
+                ]
+            },
+            {
+                text: "中国房地产债务危机处理方式",
+                event: "恒大危机 (2021)",
+                options: [
+                    "市场调整",
+                    "有效管控",
+                    "中立",
+                    "制度漏洞",
+                    "监管失败"
+                ]
+            }
+        ];
+
+        // 计分规则：左倾/进步选择分数低，右倾/保守选择分数高
+        const SCORE_MAP = {
+            "非常反对": 1, "反对": 2, "中立": 3, "同意": 4, "非常同意": 5,
+            "完全合理": 5, "基本合理": 4, "中立": 3, "过度反应": 2, "严重侵犯自由": 1,
+            // 所有选项映射为1-5分
+        };
+        
+        // 初始化变量
+        let startTime = new Date();
+        let timerInterval;
+        let economicScores = [];
+        let socialScores = [];
+        
+        // 更新进度
+        function updateProgress() {
+            const totalQuestions = questions.length;
+            let answered = 0;
+            
+            for (let i = 0; i < totalQuestions; i++) {
+                if (document.querySelector(`input[name="q${i}"]:checked`)) {
+                    answered++;
+                }
+            }
+            
+            document.getElementById('answered-count').textContent = answered;
+            document.getElementById('remaining-count').textContent = totalQuestions - answered;
+            
+            const progress = (answered / totalQuestions) * 100;
+            document.getElementById('progress-fill').style.width = `${progress}%`;
+            document.getElementById('progress-percent').textContent = `${Math.round(progress)}%`;
+            document.getElementById('progress-text').textContent = `${Math.round(progress)}%`;
+        }
+        
+        // 重置所有答案
+        function resetAll() {
+            const radioInputs = document.querySelectorAll('input[type="radio"]');
+            radioInputs.forEach(input => {
+                input.checked = false;
+            });
+            updateProgress();
+            document.getElementById('results').style.display = 'none';
+            startTime = new Date(); // 重置计时器
+            updateTimer();
+            window.scrollTo({top: 0, behavior: 'smooth'});
+        }
+        
+        // 提交问卷
+        function submitQuestionnaire() {
+            const answered = parseInt(document.getElementById('answered-count').textContent);
+            if (answered < questions.length) {
+                alert(`请完成所有${questions.length}道题目后再提交`);
+                return;
+            }
+            
+            // 计算分数
+            let totalEconomicScore = 0;
+            let totalSocialScore = 0;
+            economicScores = [];
+            socialScores = [];
+            
+            for (let i = 0; i < questions.length; i++) {
+                const selectedOption = document.querySelector(`input[name="q${i}"]:checked`);
+                if (selectedOption) {
+                    const value = parseInt(selectedOption.value);
+                    
+                    // 区分经济和社会的不同问题
+                    if (i % 2 === 0) { // 经济相关题
+                        economicScores.push(value);
+                        totalEconomicScore += value;
+                    } else { // 社会相关题
+                        socialScores.push(value);
+                        totalSocialScore += value;
+                    }
+                }
+            }
+            
+            // 计算平均分（转换为0-100范围）
+            const economicPercent = (totalEconomicScore / (5 * economicScores.length)) * 100;
+            const socialPercent = (totalSocialScore / (5 * socialScores.length)) * 100;
+            
+            // 确定意识形态名称
+            const ideology = determineIdeology(economicPercent, socialPercent);
+            
+            // 更新结果展示
+            updateResults(economicPercent, socialPercent, ideology);
+            
+            // 显示结果
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+            
+            clearInterval(timerInterval); // 停止计时器
+        }
+        
+        // 确定意识形态
+        function determineIdeology(economic, social) {
+            // X轴：社会议题立场（保守-进步），Y轴：经济议题立场（左倾-右倾）
+            const socialRatio = social / 100;
+            const economicRatio = economic / 100;
+            
+            // 定位坐标
+            const userX = 10 + (socialRatio * 80);
+            const userY = 10 + ((1 - economicRatio) * 80);
+            
+            // 更新用户点位置
+            const userPoint = document.querySelector('.user-point');
+            userPoint.style.left = `${userX}%`;
+            userPoint.style.top = `${userY}%`;
+            
+            // 设置雷达位置
+            const userRadar = document.querySelector('.user-radar');
+            userRadar.style.left = `${userX}%`;
+            userRadar.style.top = `${userY}%`;
+            userRadar.style.borderColor = `rgba(${Math.floor(167 + (88 * socialRatio))}, 
+                ${Math.floor(139 + (109 * (1 - economicRatio)))}, 
+                ${Math.floor(250 + (9 * socialRatio))}, 0.5)`;
+            
+            // 找到最接近的意识形态
+            let minDistance = Infinity;
+            let closestIdeology = ideologies[0];
+            
+            for (const ideology of ideologies) {
+                const distance = Math.sqrt(
+                    Math.pow(userX - ideology.x, 2) + 
+                    Math.pow(userY - ideology.y, 2)
+                );
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    closestIdeology = ideology;
+                }
+            }
+            
+            return closestIdeology;
+        }
+        
+        // 更新结果页面
+        function updateResults(economic, social, ideology) {
+            // 更新位置标签
+            document.getElementById('ideologyName').textContent = ideology.name;
+            
+            // 更新坐标位置展示
+            document.getElementById('economicScore').textContent = getPositionLabel(economic, true);
+            document.getElementById('socialScore').textContent = getPositionLabel(social, false);
+            
+            document.getElementById('economicBar').style.width = `${economic}%`;
+            document.getElementById('socialBar').style.width = `${social}%`;
+            
+            document.getElementById('economicPercent').textContent = `${Math.round(economic)}%`;
+            document.getElementById('socialPercent').textContent = `${Math.round(social)}%`;
+            
+            // 更新分析文本
+            document.getElementById('economicAnalysis').textContent = getEconomicAnalysis(economic);
+            document.getElementById('socialAnalysis').textContent = getSocialAnalysis(social);
+            
+            // 创建意识形态点
+            const spectrumMap = document.querySelector('.spectrum-map');
+            
+            // 清除旧点（保留用户点和雷达）
+            const oldPoints = document.querySelectorAll('.ideology-point');
+            oldPoints.forEach(point => point.remove());
+            
+            // 添加新点
+            for (const item of ideologies) {
+                const point = document.createElement('div');
+                point.className = 'ideology-point';
+                point.style.left = `${item.x}%`;
+                point.style.top = `${item.y}%`;
+                point.style.backgroundColor = item.color;
+                
+                point.addEventListener('click', () => {
+                    const infoBox = document.getElementById('ideologyInfo');
+                    infoBox.style.display = 'block';
+                    infoBox.style.left = `${parseInt(item.x) > 50 ? item.x - 25 : item.x + 5}%`;
+                    infoBox.style.top = `${parseInt(item.y) > 50 ? item.y - 10 : item.y + 5}%`;
+                    
+                    infoBox.innerHTML = `<h4>${item.name}</h4><p>${item.desc}</p>`;
+                });
+                
+                spectrumMap.appendChild(point);
+            }
+            
+            // 更新匹配意识形态
+            const matchContainer = document.getElementById('matchItems');
+            matchContainer.innerHTML = '';
+            
+            // 生成匹配度
+            for (let i = 0; i < 3; i++) {
+                const ideology = ideologies[Math.floor(Math.random() * ideologies.length)];
+                const matchPercent = 70 + Math.floor(Math.random() * 26); // 70-95%
+                
+                const matchItem = document.createElement('div');
+                matchItem.className = 'match-item';
+                matchItem.innerHTML = `
+                    <div class="match-percent">${matchPercent}%</div>
+                    <div class="match-name">${ideology.name}</div>
+                    <div class="match-desc">${ideology.desc.substring(0, 60)}...</div>
+                `;
+                
+                matchContainer.appendChild(matchItem);
+            }
+        }
+        
+        function getPositionLabel(score, isEconomic) {
+            const categories = isEconomic ? 
+                ["计划经济", "公共导向", "混合经济", "自由市场", "资本优先"] :
+                ["传统保守", "渐进调整", "中立平衡", "社会进步", "激进变革"];
+            
+            if (score < 20) return `${categories[0]} (${Math.round(score)}%)`;
+            if (score < 40) return `${categories[1]} (${Math.round(score)}%)`;
+            if (score < 60) return `${categories[2]} (${Math.round(score)}%)`;
+            if (score < 80) return `${categories[3]} (${Math.round(score)}%)`;
+            return `${categories[4]} (${Math.round(score)}%)`;
+        }
+        
+        function getEconomicAnalysis(score) {
+            if (score < 20) return "强烈支持财富再分配、公共资源控制和全面福利体系，主张政府主导经济发展方向";
+            if (score < 40) return "倾向混合经济模式，支持关键产业国有化和社会财富再分配，但接受部分市场机制";
+            if (score < 60) return "主张平衡市场效率与社会公平，支持混合经济模式下的适度政府干预";
+            if (score < 80) return "倾向自由市场原则，支持减少政府干预和降低企业税负，主张以创新驱动发展";
+            return "信奉自由市场至上，支持最低限度的政府干预、私有化和全球自由贸易体系";
+        }
+        
+        function getSocialAnalysis(score) {
+            if (score < 20) return "坚守传统价值观和社会规范，支持权威体系和社会秩序维护的文化保守立场";
+            if (score < 40) return "尊重既有社会传统的同时接受渐进式社会改革，谨慎对待文化变迁";
+            if (score < 60) return "在社会问题上持务实中立立场，根据具体议题分别采取不同立场";
+            if (score < 80) return "支持文化多元、个人自由和社会包容性政策，推动少数群体权利保障";
+            return "主张彻底变革传统社会结构，支持激进文化改革、社会平等和多元化政策";
+        }
+        
+        // 计时功能
+        function updateTimer() {
+            const now = new Date();
+            const elapsed = new Date(now - startTime);
+            const minutes = elapsed.getMinutes().toString().padStart(2, '0');
+            const seconds = elapsed.getSeconds().toString().padStart(2, '0');
+            document.getElementById('time-spent').textContent = `${minutes}:${seconds}`;
+        }
+        
+        // 生成问题
+        function generateQuestions() {
+            const container = document.getElementById('questionsContainer');
+            container.innerHTML = '';
+            
+            questions.forEach((question, index) => {
+                const questionCard = document.createElement('div');
+                questionCard.className = 'question-card';
+                
+                // 创建事件卡片
+                questionCard.innerHTML = `
+                    <div class="event-image">
+                        <div>${question.event}</div>
+                    </div>
+                    <div class="event-desc">${question.event}背景下的政治立场测试</div>
+                    <div class="question-text">${index + 1}. ${question.text}</div>
+                    <div class="options-grid">
+                `;
+                
+                // 添加选项
+                for (let i = 0; i < 5; i++) {
+                    questionCard.innerHTML += `
+                        <div class="option-item">
+                            <input type="radio" id="q${index}-${i}" name="q${index}" value="${SCORE_MAP[question.options[i]]}" class="option-input">
+                            <label for="q${index}-${i}" class="option-label">${question.options[i]}</label>
+                        </div>
+                    `;
+                }
+                
+                questionCard.innerHTML += `</div>`;
+                container.appendChild(questionCard);
+            });
+        }
+        
+        // 事件监听器
+        document.addEventListener('DOMContentLoaded', () => {
+            // 生成问题
+            generateQuestions();
+            
+            // 更新进度
+            const radioInputs = document.querySelectorAll('input[type="radio"]');
+            radioInputs.forEach(input => {
+                input.addEventListener('change', updateProgress);
+            });
+            
+            // 提交按钮
+            document.getElementById('submitBtn').addEventListener('click', submitQuestionnaire);
+            
+            // 重置按钮
+            document.getElementById('resetBtn').addEventListener('click', resetAll);
+            
+            // 初始化进度
+            updateProgress();
+            
+            // 开始计时器
+            timerInterval = setInterval(updateTimer, 1000);
+        });
+    </script>
+</body>
+</html>
